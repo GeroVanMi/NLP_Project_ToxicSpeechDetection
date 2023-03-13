@@ -1,0 +1,4 @@
+/data/kaggle/*
+!/data/kaggle/.gitkeep
+/venv/
+/.idea/
