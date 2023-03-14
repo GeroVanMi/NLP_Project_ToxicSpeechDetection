@@ -4,6 +4,8 @@ from os import PathLike
 
 import nltk
 import numpy as np
+import fasttext
+from fasttext.FastText import _FastText
 
 from helpers import limit_documents
 
@@ -25,7 +27,6 @@ def read_file(file_path: str | PathLike[str]) -> []:
 
 def extract_tokens(documents: []) -> []:
     """
-    TODO: This takes very long, let's cache the result of this somehow.
     :param documents:
     :return:
     """
@@ -44,7 +45,7 @@ def extract_tokens(documents: []) -> []:
             print(f"Extracting tokens: {percentage}%")
 
         try:
-            document.append(nltk.tokenize.word_tokenize(document[COMMENT_TEXT_INDEX]))
+            document.append(nltk.tokenize.regexp_tokenize(document[COMMENT_TEXT_INDEX], r'[a-zA-Z]+'))
         except TypeError as e:
             errors += 1
             print(e)
@@ -79,30 +80,43 @@ def generate_bag_of_tokens(documents: []) -> {}:
     return bag_of_tokens
 
 
-def vectorize_documents(documents: [], bag_of_tokens: {}) -> []:
+def vectorize_documents(documents: [], vectorize_model: _FastText) -> []:
     """
     Converts the tokens into a number that can be used for training a neural network.
-    TODO: This approach is a bit flawed, since if we encounter a word that isn't in the bag of tokens, it probably
-          crashes? Maybe we should delete words that don't appear in the bag of tokens?
 
     :param documents:
-    :param bag_of_tokens:
+    :param vectorize_model:
     :return:
     """
     print("Vectorizing documents")
 
     for document in documents:
-        token_vector = np.zeros(len(bag_of_tokens), dtype=int)
         tokens = document[TOKENS_INDEX]
+        token_vectors = np.ndarray(shape=(len(tokens), 100))
 
-        for token in tokens:
-            token_vector[bag_of_tokens[token]] = 1
+        for (index, token) in enumerate(tokens):
+            token_vectors[index] = vectorize_model.get_word_vector(token)
 
-        document.append(token_vector)
+        document.append(token_vectors)
+
+    # Old One-Hot encoding implementation
+    # for document in documents:
+    #     token_vector = np.zeros(len(bag_of_tokens), dtype=int)
+    #     tokens = document[TOKENS_INDEX]
+    #
+    #     for token in tokens:
+    #         if token in bag_of_tokens:
+    #             token_vector[bag_of_tokens[token]] = 1
+    #         else:
+    #             print(f"Vectorizing documents: Should remove token: {token}")
+    #
+    #     document.append(token_vector)
     return documents
 
 
 def save_documents(documents: [], file_path: str | PathLike[str]):
+    start = time.time()
+
     with open(file_path, mode='w') as file:
         file.write(";".join([
             "id",
@@ -137,21 +151,44 @@ def save_documents(documents: [], file_path: str | PathLike[str]):
             ]
 
             file.write(";".join(save_fields))
+    end = time.time()
+    total_time = end - start
+    print(f"Saving documents finished in ~{round(total_time, 4)}s")
+
+
+def save_bag_of_tokens(bag_of_tokens: dict, file_path: str | PathLike[str]):
+    with open(file_path, mode='w') as file:
+        for word in bag_of_tokens.keys():
+            file.write(word + " ")
+
+
+def train_fast_text_model(bag_of_tokens_file_path: str | PathLike[str],
+                          model_path: str | PathLike[str] = '../data/fasttext/model.bin'):
+    model = fasttext.train_unsupervised(bag_of_tokens_file_path, model='skipgram', minCount=1)
+    model.save_model(model_path)
+    return model
 
 
 def main():
+    # TODO: We want to measure the time and write a log of the runs so that these can be used for visualizations
     file_path = '../data/kaggle/train.csv'
     save_file_path = '../data/processed/train.csv'
+    bag_of_words_file_path = '../data/fasttext/bag_of_words.txt'
     documents = read_file(file_path)
 
     # Only for testing
-    documents = limit_documents(documents, 5000)
+    documents = limit_documents(documents, 1000)
 
     documents = extract_tokens(documents)
     documents = process_tokens(documents)
-    bag_of_tokens = generate_bag_of_tokens(documents)
 
-    documents = vectorize_documents(documents, bag_of_tokens)
+    # Bag of Tokens related
+    bag_of_tokens = generate_bag_of_tokens(documents)
+    save_bag_of_tokens(bag_of_tokens, bag_of_words_file_path)
+    # TODO: Handle the error properly, when the bag of words path doesn't exist
+    vectorize_model = train_fast_text_model(bag_of_words_file_path)
+
+    documents = vectorize_documents(documents, vectorize_model)
     save_documents(documents, save_file_path)
 
 
