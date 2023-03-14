@@ -1,4 +1,6 @@
 /data/kaggle/*
+/data/processed/*
 !/data/kaggle/.gitkeep
+!/data/processed/.gitkeep
 /venv/
 /.idea/

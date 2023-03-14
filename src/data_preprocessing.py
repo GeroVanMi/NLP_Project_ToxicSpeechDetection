@@ -3,6 +3,9 @@ import time
 from os import PathLike
 
 import nltk
+import numpy as np
+
+from helpers import limit_documents
 
 columns = ["id", "comment_text", "toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 COMMENT_TEXT_INDEX = 1
@@ -55,6 +58,7 @@ def extract_tokens(documents: []) -> []:
 
 
 def process_tokens(documents: []) -> []:
+    print("Processing tokens")
     for document in documents:
         tokens = document[TOKENS_INDEX]
         document[TOKENS_INDEX] = [token.lower() for token in tokens]
@@ -62,6 +66,7 @@ def process_tokens(documents: []) -> []:
 
 
 def generate_bag_of_tokens(documents: []) -> {}:
+    print("Generating bag of tokens.")
     bag_of_tokens = {}
     counter = 0
     for document in documents:
@@ -74,7 +79,7 @@ def generate_bag_of_tokens(documents: []) -> {}:
     return bag_of_tokens
 
 
-def vectorize_tokens(documents: [], bag_of_tokens: {}) -> []:
+def vectorize_documents(documents: [], bag_of_tokens: {}) -> []:
     """
     Converts the tokens into a number that can be used for training a neural network.
     TODO: This approach is a bit flawed, since if we encounter a word that isn't in the bag of tokens, it probably
@@ -84,37 +89,70 @@ def vectorize_tokens(documents: [], bag_of_tokens: {}) -> []:
     :param bag_of_tokens:
     :return:
     """
+    print("Vectorizing documents")
+
     for document in documents:
+        token_vector = np.zeros(len(bag_of_tokens), dtype=int)
         tokens = document[TOKENS_INDEX]
-        document.append([bag_of_tokens[token] for token in tokens])
+
+        for token in tokens:
+            token_vector[bag_of_tokens[token]] = 1
+
+        document.append(token_vector)
     return documents
 
 
-def limit_documents(documents: [], limit=10) -> {}:
-    return documents[0:limit]
+def save_documents(documents: [], file_path: str | PathLike[str]):
+    with open(file_path, mode='w') as file:
+        file.write(";".join([
+            "id",
+            "toxic",
+            "severe_toxic",
+            "obscene",
+            "threat",
+            "insult",
+            "identity_hate",
+            "tokens_vector"]
+        ))
+        np.set_printoptions(threshold=np.inf)
 
+        percentage = 0
+        counter = 0
+        for document in documents:
+            counter += 1
+            if counter % round(len(documents) / 100) == 0:
+                percentage += 1
+                counter = 0
+                print(f"Saving documents: {percentage}%")
 
-def print_documents(documents: [], limit=10) -> None:
-    documents = limit_documents(documents, limit)
-    for document in documents:
-        print(document)
+            file.write("\n")
+            save_fields = [
+                document[0],
+                document[2],
+                document[3],
+                document[4],
+                document[5],
+                document[6],
+                np.array2string(document[-1], max_line_width=np.inf, separator=" ")
+            ]
+
+            file.write(";".join(save_fields))
 
 
 def main():
     file_path = '../data/kaggle/train.csv'
+    save_file_path = '../data/processed/train.csv'
     documents = read_file(file_path)
 
     # Only for testing
-    documents = limit_documents(documents, 100)
+    documents = limit_documents(documents, 5000)
 
     documents = extract_tokens(documents)
     documents = process_tokens(documents)
     bag_of_tokens = generate_bag_of_tokens(documents)
 
-    documents = vectorize_tokens(documents, bag_of_tokens)
-
-    print_documents(documents)
-    print(bag_of_tokens)
+    documents = vectorize_documents(documents, bag_of_tokens)
+    save_documents(documents, save_file_path)
 
 
 if __name__ == '__main__':
