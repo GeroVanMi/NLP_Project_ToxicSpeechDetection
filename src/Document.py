@@ -73,5 +73,5 @@ class Document:
             self.threat,
             self.insult,
             self.identity_hate,
-            " ".join(list(self.token_vectors.reshape(-1).astype(str)))
+            np_seperator.join(list(self.token_vectors.reshape(-1).astype(str)))
         ])
