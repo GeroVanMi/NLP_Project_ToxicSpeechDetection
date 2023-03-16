@@ -2,31 +2,40 @@ import csv
 import time
 from os import PathLike
 
-import nltk
-import numpy as np
 import fasttext
+import numpy as np
 from fasttext.FastText import _FastText
 
+from Document import Document
 from helpers import limit_documents
 
 columns = ["id", "comment_text", "toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
-COMMENT_TEXT_INDEX = 1
-TOKENS_INDEX = 8
 
 
-def read_file(file_path: str | PathLike[str]) -> []:
+def read_file(file_path: str | PathLike[str]) -> [Document]:
     documents = []
     with open(file_path, 'r', newline='') as csv_file:
         reader = csv.reader(csv_file, delimiter=',')
         for (index, row) in enumerate(reader):
             if index != 0:
-                documents.append(row)
+                documents.append(Document(
+                    row[0],
+                    row[1],
+                    row[2],
+                    row[3],
+                    row[4],
+                    row[5],
+                    row[6],
+                    row[7],
+                ))
 
     return documents
 
 
-def extract_tokens(documents: []) -> []:
+def extract_tokens(documents: [Document]) -> []:
     """
+    TODO: Decide if we want to do this in the __init__ function of the Document class?
+
     :param documents:
     :return:
     """
@@ -44,13 +53,8 @@ def extract_tokens(documents: []) -> []:
             counter = 0
             print(f"Extracting tokens: {percentage}%")
 
-        try:
-            document.append(nltk.tokenize.regexp_tokenize(document[COMMENT_TEXT_INDEX], r'[a-zA-Z]+'))
-        except TypeError as e:
-            errors += 1
-            print(e)
-            print(document[COMMENT_TEXT_INDEX])
-            print(type(document[COMMENT_TEXT_INDEX]))
+        document.tokenize()
+
     end = time.time()
     total_time = end - start
     print(f"Extracting tokens finished in ~{round(total_time, 4)}s")
@@ -58,20 +62,26 @@ def extract_tokens(documents: []) -> []:
     return documents
 
 
-def process_tokens(documents: []) -> []:
+def process_tokens(documents: [Document]) -> [Document]:
+    """
+    TODO: Decide if we want to do this in the __init__ function of the Document class?
+    TODO: Grouping together multiple for loops through the documents could improve performance.
+
+    :param documents:
+    :return:
+    """
     print("Processing tokens")
     for document in documents:
-        tokens = document[TOKENS_INDEX]
-        document[TOKENS_INDEX] = [token.lower() for token in tokens]
+        document.apply_lower_case()
     return documents
 
 
-def generate_bag_of_tokens(documents: []) -> {}:
+def generate_bag_of_tokens(documents: [Document]) -> {}:
     print("Generating bag of tokens.")
     bag_of_tokens = {}
     counter = 0
     for document in documents:
-        tokens = document[TOKENS_INDEX]
+        tokens = document.tokens
         for token in tokens:
             if token not in bag_of_tokens:
                 bag_of_tokens[token] = counter
@@ -80,24 +90,28 @@ def generate_bag_of_tokens(documents: []) -> {}:
     return bag_of_tokens
 
 
-def vectorize_documents(documents: [], vectorize_model: _FastText) -> []:
+def vectorize_documents(documents: [Document], vectorize_model: _FastText) -> []:
     """
     Converts the tokens into a number that can be used for training a neural network.
+    TODO: This should be grouped with the other calls as well
 
     :param documents:
     :param vectorize_model:
     :return:
     """
     print("Vectorizing documents")
+    start = time.time()
 
+    counter = 0
+    percentage = 0
     for document in documents:
-        tokens = document[TOKENS_INDEX]
-        token_vectors = np.ndarray(shape=(len(tokens), 100))
+        counter += 1
 
-        for (index, token) in enumerate(tokens):
-            token_vectors[index] = vectorize_model.get_word_vector(token)
-
-        document.append(token_vectors)
+        if counter % round(len(documents) / 100) == 0:
+            percentage += 1
+            counter = 0
+            print(f"Vectorizing documents: {percentage}%")
+        document.vectorize_tokens(vectorize_model)
 
     # Old One-Hot encoding implementation
     # for document in documents:
@@ -111,10 +125,13 @@ def vectorize_documents(documents: [], vectorize_model: _FastText) -> []:
     #             print(f"Vectorizing documents: Should remove token: {token}")
     #
     #     document.append(token_vector)
+    end = time.time()
+    total_time = end - start
+    print(f"Extracting tokens finished in ~{round(total_time, 4)}s")
     return documents
 
 
-def save_documents(documents: [], file_path: str | PathLike[str]):
+def save_documents(documents: [Document], file_path: str | PathLike[str]):
     start = time.time()
 
     with open(file_path, mode='w') as file:
@@ -140,17 +157,10 @@ def save_documents(documents: [], file_path: str | PathLike[str]):
                 print(f"Saving documents: {percentage}%")
 
             file.write("\n")
-            save_fields = [
-                document[0],
-                document[2],
-                document[3],
-                document[4],
-                document[5],
-                document[6],
-                np.array2string(document[-1], max_line_width=np.inf, separator=" ")
-            ]
 
-            file.write(";".join(save_fields))
+            content = document.serialize()
+            file.write(content)
+
     end = time.time()
     total_time = end - start
     print(f"Saving documents finished in ~{round(total_time, 4)}s")
