@@ -4,7 +4,7 @@ import numpy as np
 
 class Document:
     tokens: [str]
-    token_vectors: np.ndarray
+    token_vector: [int]
     id: str
 
     toxic: int
@@ -46,17 +46,18 @@ class Document:
         self.tokens = [token.lower() for token in self.tokens]
         return self
 
-    def vectorize_tokens(self, vectorize_model):
-        token_vectors = np.ndarray(shape=(len(self.tokens), 100))
+    def vectorize_tokens(self, bag_of_tokens: {}) -> [int]:
+        token_vector = []
 
         for (index, token) in enumerate(self.tokens):
-            token_vectors[index] = vectorize_model.get_word_vector(token)
+            if token in bag_of_tokens:
+                token_vector.append(bag_of_tokens[token])
 
-        self.token_vectors = token_vectors
+        self.token_vector = token_vector
 
         return self
 
-    def serialize(self, seperator=";", np_seperator=" ") -> str:
+    def serialize(self, seperator=";", np_seperator=",") -> str:
         """
         Converts the document into a string, in order to save it to a file.
         TODO: Handle error for when this function is called too early.
@@ -73,5 +74,27 @@ class Document:
             self.threat,
             self.insult,
             self.identity_hate,
-            np_seperator.join(list(self.token_vectors.reshape(-1).astype(str)))
+            np_seperator.join(map(str, self.token_vector)),
         ])
+
+    def one_hot_encode(self, bag_of_tokens: {str: int}):
+        vector = np.zeros(len(bag_of_tokens))
+        for token_index in self.token_vector:
+            vector[int(token_index) - 1] = 1
+        return vector.astype(int)
+
+    @classmethod
+    def deserialize(cls, row: [str], np_seperator=","):
+        document = cls(
+            row[0],
+            "",
+            row[1],
+            row[2],
+            row[3],
+            row[4],
+            row[5],
+            row[6],
+        )
+        document.token_vector = [int(entry) for entry in row[7].split(np_seperator)]
+
+        return document

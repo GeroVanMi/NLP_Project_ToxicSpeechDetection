@@ -1,10 +1,11 @@
 import csv
+import json
 import time
 from os import PathLike
 
 import fasttext
 import numpy as np
-from fasttext.FastText import _FastText
+# from fasttext.FastText import _FastText
 
 from Document import Document
 from helpers import limit_documents
@@ -79,7 +80,8 @@ def process_tokens(documents: [Document]) -> [Document]:
 def generate_bag_of_tokens(documents: [Document]) -> {}:
     print("Generating bag of tokens.")
     bag_of_tokens = {}
-    counter = 0
+    # Words are numbered from one upward, 0 is reserved for non-existing tokens.
+    counter = 1
     for document in documents:
         tokens = document.tokens
         for token in tokens:
@@ -90,13 +92,13 @@ def generate_bag_of_tokens(documents: [Document]) -> {}:
     return bag_of_tokens
 
 
-def vectorize_documents(documents: [Document], vectorize_model: _FastText) -> []:
+def vectorize_documents(documents: [Document], bag_of_tokens: {}) -> []:
     """
     Converts the tokens into a number that can be used for training a neural network.
     TODO: This should be grouped with the other calls as well
 
+    :param bag_of_tokens:
     :param documents:
-    :param vectorize_model:
     :return:
     """
     print("Vectorizing documents")
@@ -111,7 +113,7 @@ def vectorize_documents(documents: [Document], vectorize_model: _FastText) -> []
             percentage += 1
             counter = 0
             print(f"Vectorizing documents: {percentage}%")
-        document.vectorize_tokens(vectorize_model)
+        document.vectorize_tokens(bag_of_tokens)
 
     # Old One-Hot encoding implementation
     # for document in documents:
@@ -149,6 +151,7 @@ def save_documents(documents: [Document], file_path: str | PathLike[str]):
 
         percentage = 0
         counter = 0
+        empty_docs = 0
         for document in documents:
             counter += 1
             if counter % round(len(documents) / 100) == 0:
@@ -156,20 +159,24 @@ def save_documents(documents: [Document], file_path: str | PathLike[str]):
                 counter = 0
                 print(f"Saving documents: {percentage}%")
 
-            file.write("\n")
-
-            content = document.serialize()
-            file.write(content)
+            if len(document.token_vector) != 0:
+                file.write("\n")
+                content = document.serialize()
+                file.write(content)
+            else:
+                empty_docs += 1
 
     end = time.time()
     total_time = end - start
     print(f"Saving documents finished in ~{round(total_time, 4)}s")
+    print(f"Excluded {empty_docs} empty documents.")
 
 
 def save_bag_of_tokens(bag_of_tokens: dict, file_path: str | PathLike[str]):
     with open(file_path, mode='w') as file:
-        for word in bag_of_tokens.keys():
-            file.write(word + " ")
+        json.dump(bag_of_tokens, file)
+        # for word in bag_of_tokens.keys():
+        #     file.write(word + " ")
 
 
 def train_fast_text_model(bag_of_tokens_file_path: str | PathLike[str],
@@ -183,11 +190,11 @@ def main():
     # TODO: We want to measure the time and write a log of the runs so that these can be used for visualizations
     file_path = '../data/kaggle/train.csv'
     save_file_path = '../data/processed/train.csv'
-    bag_of_words_file_path = '../data/fasttext/bag_of_words.txt'
+    bag_of_words_file_path = '../data/processed/bag_of_words.json'
     documents = read_file(file_path)
 
     # Only for testing
-    documents = limit_documents(documents, 1000)
+    # documents = limit_documents(documents, 10000)
 
     documents = extract_tokens(documents)
     documents = process_tokens(documents)
@@ -196,9 +203,9 @@ def main():
     bag_of_tokens = generate_bag_of_tokens(documents)
     save_bag_of_tokens(bag_of_tokens, bag_of_words_file_path)
     # TODO: Handle the error properly, when the bag of words path doesn't exist
-    vectorize_model = train_fast_text_model(bag_of_words_file_path)
+    # vectorize_model = train_fast_text_model(bag_of_words_file_path)
 
-    documents = vectorize_documents(documents, vectorize_model)
+    documents = vectorize_documents(documents, bag_of_tokens)
     save_documents(documents, save_file_path)
 
 
