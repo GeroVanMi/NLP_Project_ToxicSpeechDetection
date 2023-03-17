@@ -16,7 +16,7 @@ class Document:
 
     def __init__(
             self,
-            id: str,
+            document_id: str,
             content: str,
             toxic: int,
             severe_toxic: int,
@@ -25,7 +25,7 @@ class Document:
             insult: int,
             identity_hate: int,
     ):
-        self.id = id
+        self.id = document_id
         self.content = content
         self.toxic = toxic
         self.severe_toxic = severe_toxic
@@ -57,16 +57,16 @@ class Document:
 
         return self
 
-    def serialize(self, seperator=";", np_seperator=",") -> str:
+    def serialize(self, separator=";", np_separator=",") -> str:
         """
         Converts the document into a string, in order to save it to a file.
         TODO: Handle error for when this function is called too early.
 
-        :param seperator: Which string to use to differentiate between the fields of the document
-        :param np_seperator:  Which string to use to differentiate between the values in the token_vectors numpy array.
+        :param separator: Which string to use to differentiate between the fields of the document
+        :param np_separator:  Which string to use to differentiate between the values in the token_vectors numpy array.
         :return:
         """
-        return seperator.join([
+        return separator.join([
             self.id,
             self.toxic,
             self.severe_toxic,
@@ -74,7 +74,7 @@ class Document:
             self.threat,
             self.insult,
             self.identity_hate,
-            np_seperator.join(map(str, self.token_vector)),
+            np_separator.join(map(str, self.token_vector)),
         ])
 
     def one_hot_encode(self, bag_of_tokens: {str: int}):
@@ -84,7 +84,7 @@ class Document:
         return vector.astype(int)
 
     @classmethod
-    def deserialize(cls, row: [str], np_seperator=","):
+    def deserialize(cls, row: [str], np_separator=","):
         document = cls(
             row[0],
             "",
@@ -95,6 +95,6 @@ class Document:
             row[5],
             row[6],
         )
-        document.token_vector = [int(entry) for entry in row[7].split(np_seperator)]
+        document.token_vector = [int(entry) for entry in row[7].split(np_separator)]
 
         return document
