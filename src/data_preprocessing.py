@@ -1,19 +1,21 @@
 import csv
 import json
+# from fasttext.FastText import _FastText
+import logging
 import time
 from os import PathLike
 
 import fasttext
 import numpy as np
-# from fasttext.FastText import _FastText
+from alive_progress import alive_bar
 
 from Document import Document
-from helpers import limit_documents
 
 columns = ["id", "comment_text", "toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
 
 def read_file(file_path: str | PathLike[str]) -> [Document]:
+    read_start_time = time.time()
     documents = []
     with open(file_path, 'r', newline='') as csv_file:
         reader = csv.reader(csv_file, delimiter=',')
@@ -30,6 +32,7 @@ def read_file(file_path: str | PathLike[str]) -> [Document]:
                     row[7],
                 ))
 
+    logging.info(f"Reading files:{time.time() - read_start_time}")
     return documents
 
 
@@ -42,24 +45,14 @@ def extract_tokens(documents: [Document]) -> []:
     """
     start = time.time()
 
-    counter = 0
-    errors = 0
-    percentage = 0
-
-    for document in documents:
-        counter += 1
-
-        if counter % round(len(documents) / 100) == 0:
-            percentage += 1
-            counter = 0
-            print(f"Extracting tokens: {percentage}%")
-
-        document.tokenize()
+    with alive_bar(len(documents), title="Extracting tokens") as update_bar:
+        for document in documents:
+            update_bar()
+            document.tokenize()
 
     end = time.time()
     total_time = end - start
-    print(f"Extracting tokens finished in ~{round(total_time, 4)}s")
-    print(f"Encountered {errors} errors.\n")
+    logging.info(f"Extracting tokens:{total_time}")
     return documents
 
 
@@ -71,24 +64,34 @@ def process_tokens(documents: [Document]) -> [Document]:
     :param documents:
     :return:
     """
-    print("Processing tokens")
-    for document in documents:
-        document.apply_lower_case()
+    with alive_bar(len(documents), title="Processing tokens") as update_bar:
+        for document in documents:
+            update_bar()
+            document.apply_lower_case()
     return documents
 
 
 def generate_bag_of_tokens(documents: [Document]) -> {}:
-    print("Generating bag of tokens.")
+    """
+    TODO: Add logging and documentation
+
+    :param documents:
+    :return:
+    """
     bag_of_tokens = {}
     # Words are numbered from one upward, 0 is reserved for non-existing tokens.
     counter = 1
-    for document in documents:
-        tokens = document.tokens
-        for token in tokens:
-            if token not in bag_of_tokens:
-                bag_of_tokens[token] = counter
-                counter += 1
+    with alive_bar(len(documents), title="Generating bag of tokens:") as update_bar:
+        for document in documents:
+            update_bar()
+            tokens = document.tokens
 
+            for token in tokens:
+                if token not in bag_of_tokens:
+                    bag_of_tokens[token] = counter
+                    counter += 1
+
+    logging.info(f"Vocabulary:{len(bag_of_tokens)}")
     return bag_of_tokens
 
 
@@ -101,35 +104,16 @@ def vectorize_documents(documents: [Document], bag_of_tokens: {}) -> []:
     :param documents:
     :return:
     """
-    print("Vectorizing documents")
     start = time.time()
 
-    counter = 0
-    percentage = 0
-    for document in documents:
-        counter += 1
+    with alive_bar(len(documents), title=f'Vectorizing documents') as update_bar:
+        for document in documents:
+            update_bar()
+            document.vectorize_tokens(bag_of_tokens)
 
-        if counter % round(len(documents) / 100) == 0:
-            percentage += 1
-            counter = 0
-            print(f"Vectorizing documents: {percentage}%")
-        document.vectorize_tokens(bag_of_tokens)
-
-    # Old One-Hot encoding implementation
-    # for document in documents:
-    #     token_vector = np.zeros(len(bag_of_tokens), dtype=int)
-    #     tokens = document[TOKENS_INDEX]
-    #
-    #     for token in tokens:
-    #         if token in bag_of_tokens:
-    #             token_vector[bag_of_tokens[token]] = 1
-    #         else:
-    #             print(f"Vectorizing documents: Should remove token: {token}")
-    #
-    #     document.append(token_vector)
     end = time.time()
     total_time = end - start
-    print(f"Extracting tokens finished in ~{round(total_time, 4)}s")
+    logging.info(f"Vectorizing documents:{total_time}")
     return documents
 
 
@@ -149,27 +133,22 @@ def save_documents(documents: [Document], file_path: str | PathLike[str]):
         ))
         np.set_printoptions(threshold=np.inf)
 
-        percentage = 0
-        counter = 0
         empty_docs = 0
-        for document in documents:
-            counter += 1
-            if counter % round(len(documents) / 100) == 0:
-                percentage += 1
-                counter = 0
-                print(f"Saving documents: {percentage}%")
+        with alive_bar(len(documents), title="Saving documents") as update_bar:
+            for document in documents:
+                update_bar()
 
-            if len(document.token_vector) != 0:
-                file.write("\n")
-                content = document.serialize()
-                file.write(content)
-            else:
-                empty_docs += 1
+                if len(document.token_vector) != 0:
+                    file.write("\n")
+                    content = document.serialize()
+                    file.write(content)
+                else:
+                    empty_docs += 1
 
     end = time.time()
     total_time = end - start
-    print(f"Saving documents finished in ~{round(total_time, 4)}s")
-    print(f"Excluded {empty_docs} empty documents.")
+    logging.info(f"Saving documents:{total_time}")
+    logging.info(f"Empty documents:{empty_docs}")
 
 
 def save_bag_of_tokens(bag_of_tokens: dict, file_path: str | PathLike[str]):
@@ -187,7 +166,8 @@ def train_fast_text_model(bag_of_tokens_file_path: str | PathLike[str],
 
 
 def main():
-    # TODO: We want to measure the time and write a log of the runs so that these can be used for visualizations
+    start_time = time.time()
+
     file_path = '../data/kaggle/train.csv'
     save_file_path = '../data/processed/train.csv'
     bag_of_words_file_path = '../data/processed/bag_of_words.json'
@@ -202,12 +182,26 @@ def main():
     # Bag of Tokens related
     bag_of_tokens = generate_bag_of_tokens(documents)
     save_bag_of_tokens(bag_of_tokens, bag_of_words_file_path)
+
     # TODO: Handle the error properly, when the bag of words path doesn't exist
     # vectorize_model = train_fast_text_model(bag_of_words_file_path)
 
     documents = vectorize_documents(documents, bag_of_tokens)
     save_documents(documents, save_file_path)
 
+    # Save the total execution time to the log
+    total_time = time.time() - start_time
+    logging.info(f"Total time:{total_time}")
+
 
 if __name__ == '__main__':
+    current_time = time.time()
+
+    logging.basicConfig(
+        filename=f'../logs/processing/{round(current_time)}.log',
+        level=logging.INFO,
+        filemode='w',
+        format='%(message)s'
+    )
+
     main()

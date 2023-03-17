@@ -1,8 +1,17 @@
+# Data folders
 /data/kaggle/*
 /data/processed/*
 /data/fasttext/*
+
+# Keep the folders checked into git version control
 !/data/kaggle/.gitkeep
 !/data/processed/.gitkeep
 !/data/fasttext/.gitkeep
+
+# Development
 /venv/
 /.idea/
+
+# Logs
+/logs/processing/*
+!/logs/processing/.gitkeep
