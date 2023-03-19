@@ -1,3 +1,6 @@
+import csv
+from os import PathLike
+
 import nltk
 import numpy as np
 
@@ -98,3 +101,42 @@ class Document:
         document.token_vector = [int(entry) for entry in row[7].split(np_separator)]
 
         return document
+
+
+def load_documents(file_path: str | PathLike[str]) -> [Document]:
+    documents = []
+    with open(file_path, 'r', newline='') as csv_file:
+        reader = csv.reader(csv_file, delimiter=';')
+        for (index, row) in enumerate(reader):
+            if index != 0:
+                documents.append(Document.deserialize(row))
+
+    return documents
+
+
+def limit_documents(documents: [], limit=10) -> {}:
+    return documents[0:limit]
+
+
+def print_documents(documents: [], limit=10) -> None:
+    documents = limit_documents(documents, limit)
+    for document in documents:
+        print(document)
+
+
+def extract_training_data(documents: [Document], bag_of_tokens: {str: int}):
+    x = []
+    y = []
+
+    for document in documents:
+        x.append(document.one_hot_encode(bag_of_tokens))
+        y.append(np.array([
+            document.toxic,
+            document.severe_toxic,
+            document.obscene,
+            document.threat,
+            document.insult,
+            document.identity_hate
+        ]))
+
+    return np.array(x, dtype=int), np.array(y, dtype=int)

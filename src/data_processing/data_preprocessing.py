@@ -3,13 +3,14 @@ import json
 # from fasttext.FastText import _FastText
 import logging
 import time
+from sklearn.model_selection import train_test_split
 from os import PathLike
 
 import fasttext
 import numpy as np
 from alive_progress import alive_bar
 
-from Document import Document
+from Document import Document, limit_documents
 
 columns = ["id", "comment_text", "toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
@@ -49,6 +50,7 @@ def extract_tokens(documents: [Document]) -> []:
         for document in documents:
             update_bar()
             document.tokenize()
+    print()
 
     end = time.time()
     total_time = end - start
@@ -68,6 +70,8 @@ def process_tokens(documents: [Document]) -> [Document]:
         for document in documents:
             update_bar()
             document.apply_lower_case()
+    print()
+
     return documents
 
 
@@ -90,6 +94,7 @@ def generate_bag_of_tokens(documents: [Document]) -> {}:
                 if token not in bag_of_tokens:
                     bag_of_tokens[token] = counter
                     counter += 1
+    print()
 
     logging.info(f"Vocabulary:{len(bag_of_tokens)}")
     return bag_of_tokens
@@ -110,6 +115,7 @@ def vectorize_documents(documents: [Document], bag_of_tokens: {}) -> []:
         for document in documents:
             update_bar()
             document.vectorize_tokens(bag_of_tokens)
+    print()
 
     end = time.time()
     total_time = end - start
@@ -144,6 +150,7 @@ def save_documents(documents: [Document], file_path: str | PathLike[str]):
                     file.write(content)
                 else:
                     empty_docs += 1
+    print()
 
     end = time.time()
     total_time = end - start
@@ -165,16 +172,28 @@ def train_fast_text_model(bag_of_tokens_file_path: str | PathLike[str],
     return model
 
 
-def main():
+def process_data(root_path: str | PathLike[str], limit: int = None):
+    print()
+    print("Started data processing.\n")
+
+    file_path = root_path + '/data/kaggle/train.csv'
+    bag_of_words_file_path = root_path + '/data/processed/bag_of_words.json'
+    train_output_file_path = root_path + '/data/processed/train.csv'
+    test_output_file_path = root_path + '/data/processed/test.csv'
+
     start_time = time.time()
 
-    file_path = '../data/kaggle/train.csv'
-    save_file_path = '../data/processed/train.csv'
-    bag_of_words_file_path = '../data/processed/bag_of_words.json'
+    logging.basicConfig(
+        filename=f'{root_path}/logs/processing/{round(start_time)}.log',
+        level=logging.INFO,
+        filemode='w',
+        format='%(message)s'
+    )
+
     documents = read_file(file_path)
 
-    # Only for testing
-    # documents = limit_documents(documents, 10000)
+    if limit is not None:
+        documents = limit_documents(documents, limit)
 
     documents = extract_tokens(documents)
     documents = process_tokens(documents)
@@ -187,7 +206,11 @@ def main():
     # vectorize_model = train_fast_text_model(bag_of_words_file_path)
 
     documents = vectorize_documents(documents, bag_of_tokens)
-    save_documents(documents, save_file_path)
+
+    train_documents, test_documents = train_test_split(documents)
+
+    save_documents(train_documents, train_output_file_path)
+    save_documents(test_documents, test_output_file_path)
 
     # Save the total execution time to the log
     total_time = time.time() - start_time
@@ -195,13 +218,4 @@ def main():
 
 
 if __name__ == '__main__':
-    current_time = time.time()
-
-    logging.basicConfig(
-        filename=f'../logs/processing/{round(current_time)}.log',
-        level=logging.INFO,
-        filemode='w',
-        format='%(message)s'
-    )
-
-    main()
+    process_data('../..')
