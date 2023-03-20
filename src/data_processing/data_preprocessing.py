@@ -1,21 +1,21 @@
 import csv
 import json
 # from fasttext.FastText import _FastText
-import logging
 import time
-from sklearn.model_selection import train_test_split
 from os import PathLike
 
 import fasttext
 import numpy as np
 from alive_progress import alive_bar
+from sklearn.model_selection import train_test_split
 
 from Document import Document, limit_documents
+from Log import Log
 
 columns = ["id", "comment_text", "toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
 
-def read_file(file_path: str | PathLike[str]) -> [Document]:
+def read_file(file_path: str | PathLike[str], logger: Log = None) -> [Document]:
     read_start_time = time.time()
     documents = []
     with open(file_path, 'r', newline='') as csv_file:
@@ -33,14 +33,16 @@ def read_file(file_path: str | PathLike[str]) -> [Document]:
                     row[7],
                 ))
 
-    logging.info(f"Reading files:{time.time() - read_start_time}")
+    if logger is not None:
+        logger.log_data_processing(f"Reading files:{time.time() - read_start_time}")
     return documents
 
 
-def extract_tokens(documents: [Document]) -> []:
+def extract_tokens(documents: [Document], logger: Log = None) -> []:
     """
     TODO: Decide if we want to do this in the __init__ function of the Document class?
 
+    :param logger:
     :param documents:
     :return:
     """
@@ -54,7 +56,9 @@ def extract_tokens(documents: [Document]) -> []:
 
     end = time.time()
     total_time = end - start
-    logging.info(f"Extracting tokens:{total_time}")
+    if logger is not None:
+        logger.log_data_processing(f"Extracting tokens:{total_time}")
+
     return documents
 
 
@@ -75,7 +79,7 @@ def process_tokens(documents: [Document]) -> [Document]:
     return documents
 
 
-def generate_bag_of_tokens(documents: [Document]) -> {}:
+def generate_bag_of_tokens(documents: [Document], logger: Log = None) -> {}:
     """
     TODO: Add logging and documentation
 
@@ -96,11 +100,13 @@ def generate_bag_of_tokens(documents: [Document]) -> {}:
                     counter += 1
     print()
 
-    logging.info(f"Vocabulary:{len(bag_of_tokens)}")
+    if logger is not None:
+        logger.log_data_processing(f"Vocabulary:{len(bag_of_tokens)}")
+
     return bag_of_tokens
 
 
-def vectorize_documents(documents: [Document], bag_of_tokens: {}) -> []:
+def vectorize_documents(documents: [Document], bag_of_tokens: {}, logger: Log = None) -> []:
     """
     Converts the tokens into a number that can be used for training a neural network.
     TODO: This should be grouped with the other calls as well
@@ -119,11 +125,13 @@ def vectorize_documents(documents: [Document], bag_of_tokens: {}) -> []:
 
     end = time.time()
     total_time = end - start
-    logging.info(f"Vectorizing documents:{total_time}")
+    if logger is not None:
+        logger.log_data_processing(f"Vectorizing documents:{total_time}")
+
     return documents
 
 
-def save_documents(documents: [Document], file_path: str | PathLike[str]):
+def save_documents(documents: [Document], file_path: str | PathLike[str], logger: Log = None) -> None:
     start = time.time()
 
     with open(file_path, mode='w') as file:
@@ -154,41 +162,43 @@ def save_documents(documents: [Document], file_path: str | PathLike[str]):
 
     end = time.time()
     total_time = end - start
-    logging.info(f"Saving documents:{total_time}")
-    logging.info(f"Empty documents:{empty_docs}")
+
+    if logger is not None:
+        logger.log_data_processing(f"Saving documents:{total_time}")
+        logger.log_data_processing(f"Empty documents:{empty_docs}")
 
 
-def save_bag_of_tokens(bag_of_tokens: dict, file_path: str | PathLike[str]):
+def save_bag_of_tokens(bag_of_tokens: dict, file_path: str | PathLike[str]) -> None:
+    """
+    TODO: This should be stored with the logs
+    :param bag_of_tokens:
+    :param file_path:
+    :return:
+    """
     with open(file_path, mode='w') as file:
         json.dump(bag_of_tokens, file)
-        # for word in bag_of_tokens.keys():
-        #     file.write(word + " ")
 
 
-def train_fast_text_model(bag_of_tokens_file_path: str | PathLike[str],
-                          model_path: str | PathLike[str] = '../data/fasttext/model.bin'):
+def train_fast_text_model(
+        bag_of_tokens_file_path: str | PathLike[str],
+        model_path: str | PathLike[str] = '../data/fasttext/model.bin'
+) -> None:
     model = fasttext.train_unsupervised(bag_of_tokens_file_path, model='skipgram', minCount=1)
     model.save_model(model_path)
     return model
 
 
-def process_data(root_path: str | PathLike[str], limit: int = None):
+def process_data(root_path: str | PathLike[str], logger: Log, limit: int = None) -> None:
     print()
     print("Started data processing.\n")
 
     file_path = root_path + '/data/kaggle/train.csv'
-    bag_of_words_file_path = root_path + '/data/processed/bag_of_words.json'
-    train_output_file_path = root_path + '/data/processed/train.csv'
-    test_output_file_path = root_path + '/data/processed/test.csv'
+
+    bag_of_words_output_path = logger.log_path + 'data/bag_of_words.json'
+    train_output_path = logger.log_path + 'data/train.csv'
+    test_output_path = logger.log_path + 'data/test.csv'
 
     start_time = time.time()
-
-    logging.basicConfig(
-        filename=f'{root_path}/logs/processing/{round(start_time)}.log',
-        level=logging.INFO,
-        filemode='w',
-        format='%(message)s'
-    )
 
     documents = read_file(file_path)
 
@@ -200,7 +210,7 @@ def process_data(root_path: str | PathLike[str], limit: int = None):
 
     # Bag of Tokens related
     bag_of_tokens = generate_bag_of_tokens(documents)
-    save_bag_of_tokens(bag_of_tokens, bag_of_words_file_path)
+    save_bag_of_tokens(bag_of_tokens, bag_of_words_output_path)
 
     # TODO: Handle the error properly, when the bag of words path doesn't exist
     # vectorize_model = train_fast_text_model(bag_of_words_file_path)
@@ -209,13 +219,11 @@ def process_data(root_path: str | PathLike[str], limit: int = None):
 
     train_documents, test_documents = train_test_split(documents)
 
-    save_documents(train_documents, train_output_file_path)
-    save_documents(test_documents, test_output_file_path)
+    save_documents(train_documents, train_output_path, logger)
+    save_documents(test_documents, test_output_path, logger)
 
     # Save the total execution time to the log
     total_time = time.time() - start_time
-    logging.info(f"Total time:{total_time}")
 
-
-if __name__ == '__main__':
-    process_data('../..')
+    if logger is not None:
+        logger.log_data_processing(f"Total time:{total_time}")

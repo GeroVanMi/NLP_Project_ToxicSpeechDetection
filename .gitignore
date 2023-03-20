@@ -15,5 +15,9 @@
 /.idea/
 
 # Logs
-/logs/processing/*
-!/logs/processing/.gitkeep
+/logs/*
+!/logs/.gitkeep
+
+# Cache files
+__pycache__
+.ipynb_checkpoints

@@ -1,19 +1,22 @@
 import argparse
+import time
 
+from Log import Log
 from data_processing.data_preprocessing import process_data
-from model.model_training import train_model
 from model.model_evaluation import evaluate_model
+from model.model_training import train_model
 
 
 def run_pipeline():
+    start_time = time.time()
+
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-p', '--process-data', action="store_true")
-    parser.add_argument('-t', '--train-model', action="store_true")
-    parser.add_argument('-e', '--evaluate-model', action="store_true")
     parser.add_argument('-l', '--limit')
 
     root_path = '..'
+
+    logger = Log(root_path, str(round(start_time)))
 
     arguments = parser.parse_args()
 
@@ -24,14 +27,9 @@ def run_pipeline():
         except ValueError:
             print(f"Data limit \"{arguments.limit}\" could not be parsed. Ignoring.")
 
-    if arguments.process_data:
-        process_data(root_path, data_limit)
-
-    if arguments.train_model:
-        train_model(root_path, limit=data_limit)
-
-    if arguments.evaluate_model:
-        evaluate_model(root_path, limit=data_limit)
+    process_data(root_path=root_path, logger=logger, limit=data_limit)
+    train_model(logger=logger, limit=data_limit)
+    evaluate_model(logger=logger, limit=data_limit)
 
 
 if __name__ == '__main__':
