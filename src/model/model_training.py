@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 from keras import Sequential, Input
-from keras.layers import Dense
+from keras.layers import Dense, Dropout
 
 from BagOfTokens import read_bag_of_tokens
 from Document import load_documents, limit_documents, extract_training_data
@@ -13,7 +13,8 @@ from Log import Log
 def create_model(input_shape):
     model = Sequential()
     model.add(Input(shape=input_shape))
-    model.add(Dense(1000, activation="relu"))
+    model.add(Dense(200, activation="relu"))
+    model.add(Dense(20, activation="relu"))
     model.add(Dense(6, activation="softmax"))
     return model
 
@@ -51,13 +52,11 @@ def train_model(
         x_train, y_train = extract_training_data(document_batch, bag_of_tokens)
 
         # TODO: Find a way to merge multiple histories
-        # TODO: Log / Store the training history for a given model so that stats about it can be retrieved a plotted
-        # TODO: Maybe plot the history and store the file?
         history = model.fit(
             x_train,
             y_train,
             verbose=1,
-            batch_size=10,
+            batch_size=5,
             epochs=number_of_epochs,
             validation_split=.1,
         )

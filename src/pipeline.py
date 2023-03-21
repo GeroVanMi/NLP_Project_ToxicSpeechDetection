@@ -11,14 +11,14 @@ def run_pipeline():
     start_time = time.time()
 
     parser = argparse.ArgumentParser()
-
     parser.add_argument('-l', '--limit')
+    parser.add_argument('--epochs')
+    parser.add_argument('--batch-size')
+    arguments = parser.parse_args()
 
     root_path = '..'
 
     logger = Log(root_path, str(round(start_time)))
-
-    arguments = parser.parse_args()
 
     data_limit = None
     if arguments.limit is not None:
@@ -27,8 +27,22 @@ def run_pipeline():
         except ValueError:
             print(f"Data limit \"{arguments.limit}\" could not be parsed. Ignoring.")
 
+    epochs = 5
+    if arguments.epochs is not None:
+        try:
+            epochs = int(arguments.epochs)
+        except ValueError:
+            print(f"Data limit \"{arguments.epochs}\" could not be parsed. Ignoring.")
+
+    batch_size = 500
+    if arguments.batch_size is not None:
+        try:
+            batch_size = int(arguments.batch_size)
+        except ValueError:
+            print(f"Data limit \"{arguments.batch_size}\" could not be parsed. Ignoring.")
+
     process_data(root_path=root_path, logger=logger, limit=data_limit)
-    train_model(logger=logger, limit=data_limit)
+    train_model(logger=logger, limit=data_limit, number_of_epochs=epochs, desired_batch_size=batch_size)
     evaluate_model(logger=logger, limit=data_limit)
 
 

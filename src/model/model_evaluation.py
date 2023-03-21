@@ -23,6 +23,10 @@ def evaluate_model(logger: Log, limit: int = None):
     model = keras.models.load_model(f"{logger.log_path}toxic_detection_model")
     model.summary()
 
+    weights, biases = model.layers[0].get_weights()
+    logger.log_model_evaluation(f"Weights mean:{weights.mean()}")
+    logger.log_model_evaluation(f"Weights standard deviation:{weights.std()}")
+
     file_path = logger.log_path + 'data/train.csv'
     bag_of_tokens_file_path = logger.log_path + 'data/bag_of_words.json'
     documents = load_documents(file_path)
@@ -33,7 +37,8 @@ def evaluate_model(logger: Log, limit: int = None):
     bag_of_tokens = read_bag_of_tokens(bag_of_tokens_file_path)
 
     x_test, y_test = extract_training_data(documents, bag_of_tokens)
-    # TODO: Maybe it would be nice to see how the test score evolves alongside the model?
+    # TODO: It would be nice to see how the test score evolves alongside the model during training?
+    # TODO: This also needs to be split into separate chunks => + Call them chunks instead of batches?
     prediction = model.predict(x_test)
     test_score = (log_loss(y_test, prediction))
-    print(f"SCORE:{test_score}")
+    logger.log_model_evaluation(f"Test-Score:{test_score}")

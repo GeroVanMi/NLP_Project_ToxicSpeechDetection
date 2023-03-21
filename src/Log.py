@@ -23,16 +23,20 @@ class Log:
     def log_model_history(self, history: History):
         history = history.history
         with open(f'{self.log_path}/training_loss.log', mode='a') as file:
-            file.write(str(history['loss']) + "\n")
+            file.write(";".join(map(str, history['loss'])) + "\n")
 
         with open(f'{self.log_path}/training_accuracy.log', mode='a') as file:
-            file.write(str(history['accuracy']) + "\n")
+            file.write(";".join(map(str, history['accuracy'])) + "\n")
 
         with open(f'{self.log_path}/validation_loss.log', mode='a') as file:
-            file.write(str(history['val_loss']) + "\n")
+            file.write(";".join(map(str, history['val_loss'])) + "\n")
 
         with open(f'{self.log_path}/validation_accuracy.log', mode='a') as file:
-            file.write(str(history['val_accuracy']) + "\n")
+            file.write(";".join(map(str, history['val_accuracy'])) + "\n")
+
+    def log_model_evaluation(self, message):
+        with open(f'{self.log_path}/model_evaluation.log', mode='a') as file:
+            file.write(message + "\n")
 
     def save_model(self, model: Model):
         model.save(self.log_path + 'toxic_detection_model')

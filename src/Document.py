@@ -10,7 +10,7 @@ class Document:
     token_vector: [int]
     id: str
 
-    toxic: int
+    is_toxic: int
     severe_toxic: int
     obscene: int
     threat: int
@@ -30,7 +30,7 @@ class Document:
     ):
         self.id = document_id
         self.content = content
-        self.toxic = toxic
+        self.is_toxic = toxic
         self.severe_toxic = severe_toxic
         self.obscene = obscene
         self.threat = threat
@@ -71,7 +71,7 @@ class Document:
         """
         return separator.join([
             self.id,
-            self.toxic,
+            self.is_toxic,
             self.severe_toxic,
             self.obscene,
             self.threat,
@@ -115,7 +115,7 @@ def load_documents(file_path: str | PathLike[str]) -> [Document]:
 
 
 def limit_documents(documents: [], limit=10) -> {}:
-    return documents[0:limit]
+    return documents[0:limit + 1]
 
 
 def print_documents(documents: [], limit=10) -> None:
@@ -131,7 +131,7 @@ def extract_training_data(documents: [Document], bag_of_tokens: {str: int}):
     for document in documents:
         x.append(document.one_hot_encode(bag_of_tokens))
         y.append(np.array([
-            document.toxic,
+            document.is_toxic,
             document.severe_toxic,
             document.obscene,
             document.threat,

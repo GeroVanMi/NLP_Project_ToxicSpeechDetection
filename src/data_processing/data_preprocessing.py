@@ -217,7 +217,7 @@ def process_data(root_path: str | PathLike[str], logger: Log, limit: int = None)
 
     documents = vectorize_documents(documents, bag_of_tokens)
 
-    train_documents, test_documents = train_test_split(documents)
+    train_documents, test_documents = train_test_split(documents, test_size=0.2)
 
     save_documents(train_documents, train_output_path, logger)
     save_documents(test_documents, test_output_path, logger)
