@@ -15,11 +15,17 @@ def run_pipeline():
     parser.add_argument('-l', '--limit')
     parser.add_argument('--epochs')
     parser.add_argument('--batch-size')
+    parser.add_argument('-n', '--name')
     arguments = parser.parse_args()
 
     root_path = '..'
 
-    logger = Log(root_path, str(round(start_time)))
+    if arguments.name:
+        log_name = arguments.name
+    else:
+        log_name = str(round(start_time))
+
+    logger = Log(root_path, log_name)
     settings = Settings() \
         .enable_oversample()
 
