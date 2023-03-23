@@ -52,7 +52,7 @@ def run_pipeline():
 
     process_data(root_path=root_path, logger=logger, settings=settings, limit=data_limit)
     train_model(logger=logger, limit=data_limit, number_of_epochs=epochs, desired_batch_size=batch_size)
-    evaluate_model(logger=logger, limit=data_limit)
+    # evaluate_model(logger=logger, limit=data_limit)
 
 
 if __name__ == '__main__':
