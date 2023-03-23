@@ -11,6 +11,8 @@ from sklearn.model_selection import train_test_split
 
 from Document import Document, limit_documents
 from Log import Log
+from Settings import Settings
+from data_processing.oversampling import oversample
 
 columns = ["id", "comment_text", "toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
@@ -188,7 +190,7 @@ def train_fast_text_model(
     return model
 
 
-def process_data(root_path: str | PathLike[str], logger: Log, limit: int = None) -> None:
+def process_data(root_path: str | PathLike[str], logger: Log, settings: Settings, limit: int = None,) -> None:
     print()
     print("Started data processing.\n")
 
@@ -218,6 +220,8 @@ def process_data(root_path: str | PathLike[str], logger: Log, limit: int = None)
     documents = vectorize_documents(documents, bag_of_tokens)
 
     train_documents, test_documents = train_test_split(documents, test_size=0.2)
+    if settings.oversample:
+        train_documents = oversample(train_documents)
 
     save_documents(train_documents, train_output_path, logger)
     save_documents(test_documents, test_output_path, logger)

@@ -6,16 +6,17 @@ from keras import Sequential, Input
 from keras.layers import Dense, Dropout
 
 from BagOfTokens import read_bag_of_tokens
-from Document import load_documents, limit_documents, extract_training_data
+from Document import load_documents, limit_documents, extract_training_data, Document
 from Log import Log
 
 
 def create_model(input_shape):
     model = Sequential()
     model.add(Input(shape=input_shape))
-    model.add(Dense(200, activation="relu"))
+    model.add(Dense(1000, activation="relu"))
+    model.add(Dense(100, activation="relu"))
     model.add(Dense(20, activation="relu"))
-    model.add(Dense(6, activation="softmax"))
+    model.add(Dense(2, activation="softmax"))
     return model
 
 
@@ -35,8 +36,7 @@ def train_model(
     bag_of_tokens = read_bag_of_tokens(bag_of_tokens_file_path)
 
     model = create_model(len(bag_of_tokens))
-    if logger is not None:
-        logger.log_model_structure(model)
+    logger.log_model_structure(model)
 
     model.compile(loss="categorical_crossentropy", optimizer="sgd", metrics=["accuracy"])
 
@@ -49,6 +49,10 @@ def train_model(
         stop = start + desired_batch_size
 
         document_batch = documents[start:stop]
+
+        if len(document_batch) < 2:
+            continue
+
         x_train, y_train = extract_training_data(document_batch, bag_of_tokens)
 
         # TODO: Find a way to merge multiple histories

@@ -11,6 +11,7 @@ class Document:
     id: str
 
     is_toxic: int
+    is_not_toxic: int
     severe_toxic: int
     obscene: int
     threat: int
@@ -30,7 +31,12 @@ class Document:
     ):
         self.id = document_id
         self.content = content
-        self.is_toxic = toxic
+
+        # Binary classification categories
+        self.is_toxic = int(toxic)
+        self.is_not_toxic = 1 if self.is_toxic == 0 else 0
+
+        # Other categories
         self.severe_toxic = severe_toxic
         self.obscene = obscene
         self.threat = threat
@@ -71,12 +77,12 @@ class Document:
         """
         return separator.join([
             self.id,
-            self.is_toxic,
-            self.severe_toxic,
-            self.obscene,
-            self.threat,
-            self.insult,
-            self.identity_hate,
+            str(self.is_toxic),
+            str(self.severe_toxic),
+            str(self.obscene),
+            str(self.threat),
+            str(self.insult),
+            str(self.identity_hate),
             np_separator.join(map(str, self.token_vector)),
         ])
 
@@ -103,7 +109,7 @@ class Document:
         return document
 
 
-def load_documents(file_path: str | PathLike[str]) -> [Document]:
+def load_documents(file_path: str | PathLike[str]) -> list[Document]:
     documents = []
     with open(file_path, 'r', newline='') as csv_file:
         reader = csv.reader(csv_file, delimiter=';')
@@ -114,7 +120,7 @@ def load_documents(file_path: str | PathLike[str]) -> [Document]:
     return documents
 
 
-def limit_documents(documents: [], limit=10) -> {}:
+def limit_documents(documents: [], limit=10) -> list[Document]:
     return documents[0:limit + 1]
 
 
@@ -130,13 +136,10 @@ def extract_training_data(documents: [Document], bag_of_tokens: {str: int}):
 
     for document in documents:
         x.append(document.one_hot_encode(bag_of_tokens))
+
         y.append(np.array([
+            document.is_not_toxic,
             document.is_toxic,
-            document.severe_toxic,
-            document.obscene,
-            document.threat,
-            document.insult,
-            document.identity_hate
         ]))
 
     return np.array(x, dtype=int), np.array(y, dtype=int)
