@@ -1,5 +1,4 @@
 import csv
-import json
 # from fasttext.FastText import _FastText
 import time
 from os import PathLike
@@ -12,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from Document import Document, limit_documents
 from Log import Log
 from Settings import Settings
+from bag_of_tokens import generate_bag_of_tokens, save_bag_of_tokens
 from data_processing.oversampling import oversample
 
 columns = ["id", "comment_text", "toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
@@ -42,7 +42,6 @@ def read_file(file_path: str | PathLike[str], logger: Log = None) -> [Document]:
 
 def extract_tokens(documents: [Document], logger: Log = None) -> []:
     """
-    TODO: Decide if we want to do this in the __init__ function of the Document class?
 
     :param logger:
     :param documents:
@@ -66,8 +65,6 @@ def extract_tokens(documents: [Document], logger: Log = None) -> []:
 
 def process_tokens(documents: [Document]) -> [Document]:
     """
-    TODO: Decide if we want to do this in the __init__ function of the Document class?
-    TODO: Grouping together multiple for loops through the documents could improve performance.
 
     :param documents:
     :return:
@@ -81,38 +78,11 @@ def process_tokens(documents: [Document]) -> [Document]:
     return documents
 
 
-def generate_bag_of_tokens(documents: [Document], logger: Log = None) -> {}:
-    """
-    TODO: Add logging and documentation
-
-    :param documents:
-    :return:
-    """
-    bag_of_tokens = {}
-    # Words are numbered from one upward, 0 is reserved for non-existing tokens.
-    counter = 1
-    with alive_bar(len(documents), title="Generating bag of tokens:") as update_bar:
-        for document in documents:
-            update_bar()
-            tokens = document.tokens
-
-            for token in tokens:
-                if token not in bag_of_tokens:
-                    bag_of_tokens[token] = counter
-                    counter += 1
-    print()
-
-    if logger is not None:
-        logger.log_data_processing(f"Vocabulary:{len(bag_of_tokens)}")
-
-    return bag_of_tokens
-
-
 def vectorize_documents(documents: [Document], bag_of_tokens: {}, logger: Log = None) -> []:
     """
     Converts the tokens into a number that can be used for training a neural network.
-    TODO: This should be grouped with the other calls as well
 
+    :param logger:
     :param bag_of_tokens:
     :param documents:
     :return:
@@ -170,17 +140,6 @@ def save_documents(documents: [Document], file_path: str | PathLike[str], logger
         logger.log_data_processing(f"Empty documents:{empty_docs}")
 
 
-def save_bag_of_tokens(bag_of_tokens: dict, file_path: str | PathLike[str]) -> None:
-    """
-    TODO: This should be stored with the logs
-    :param bag_of_tokens:
-    :param file_path:
-    :return:
-    """
-    with open(file_path, mode='w') as file:
-        json.dump(bag_of_tokens, file)
-
-
 def train_fast_text_model(
         bag_of_tokens_file_path: str | PathLike[str],
         model_path: str | PathLike[str] = '../data/fasttext/model.bin'
@@ -190,7 +149,7 @@ def train_fast_text_model(
     return model
 
 
-def process_data(root_path: str | PathLike[str], logger: Log, settings: Settings, limit: int = None,) -> None:
+def process_data(root_path: str | PathLike[str], logger: Log, settings: Settings, limit: int = None, ) -> None:
     print()
     print("Started data processing.\n")
 

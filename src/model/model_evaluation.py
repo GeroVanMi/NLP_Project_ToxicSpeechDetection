@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import log_loss, accuracy_score, f1_score
 
-from BagOfTokens import read_bag_of_tokens
+from bag_of_tokens import read_bag_of_tokens
 from Document import load_documents, limit_documents, extract_training_data
 from Log import Log
 
@@ -57,7 +57,7 @@ def evaluate_model(logger: Log, limit: int = None):
     # TODO: It would be nice to see how the test score evolves alongside the model during training?
     # TODO: This also needs to be split into separate chunks => + Call them chunks instead of batches?
     # TODO: Also log the predictions, to see if they're correct?
-    prediction = model.predict(x_test)
+    prediction = model.predict(x_test, batch_size=50)
 
     y_true = reshape_is_toxic_vector(y_test)
     y_pred = reshape_is_toxic_vector(prediction)

@@ -4,7 +4,6 @@ import time
 from Log import Log
 from Settings import Settings
 from data_processing.data_preprocessing import process_data
-from model.model_evaluation import evaluate_model
 from model.model_training import train_model
 
 
@@ -12,10 +11,15 @@ def run_pipeline():
     start_time = time.time()
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--name') # Run / Log name
+    # Run configuration
     parser.add_argument('-l', '--limit')
     parser.add_argument('--epochs')
     parser.add_argument('--batch-size')
-    parser.add_argument('-n', '--name')
+
+    # Processing configuration
+    parser.add_argument('-o', '--oversample', action='store_true')
+    parser.add_argument('-w', '--remove-stop-words', action='store_true')
     arguments = parser.parse_args()
 
     root_path = '..'
@@ -26,8 +30,13 @@ def run_pipeline():
         log_name = str(round(start_time))
 
     logger = Log(root_path, log_name)
-    settings = Settings() \
-        .enable_oversample()
+    settings = Settings()
+
+    if arguments.oversample:
+        settings.enable_oversample()
+
+    if arguments.remove_stop_words:
+        settings.enable_stop_word_removal()
 
     data_limit = None
     if arguments.limit is not None:
@@ -52,7 +61,6 @@ def run_pipeline():
 
     process_data(root_path=root_path, logger=logger, settings=settings, limit=data_limit)
     train_model(logger=logger, limit=data_limit, number_of_epochs=epochs, desired_batch_size=batch_size)
-    # evaluate_model(logger=logger, limit=data_limit)
 
 
 if __name__ == '__main__':

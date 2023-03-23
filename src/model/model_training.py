@@ -7,9 +7,9 @@ from keras import Sequential, Input, Model
 from keras.layers import Dense
 from sklearn.metrics import log_loss, accuracy_score, f1_score
 
-from BagOfTokens import read_bag_of_tokens
 from Document import load_documents, limit_documents, extract_training_data, Document
 from Log import Log
+from bag_of_tokens import read_bag_of_tokens
 from model.model_evaluation import reshape_is_toxic_vector
 
 
