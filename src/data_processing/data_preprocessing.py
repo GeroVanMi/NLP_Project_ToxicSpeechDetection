@@ -13,6 +13,7 @@ from Log import Log
 from Settings import Settings
 from bag_of_tokens import generate_bag_of_tokens, save_bag_of_tokens
 from data_processing.oversampling import oversample
+from nltk.corpus import stopwords
 
 columns = ["id", "comment_text", "toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
@@ -59,6 +60,28 @@ def extract_tokens(documents: [Document], logger: Log = None) -> []:
     total_time = end - start
     if logger is not None:
         logger.log_data_processing(f"Extracting tokens:{total_time}")
+
+    return documents
+
+
+def remove_stopwords(documents: [Document], logger: Log) -> list[Document]:
+    """
+
+    :param logger:
+    :param documents:
+    :return:
+    """
+    start = time.time()
+
+    with alive_bar(len(documents), title="Removing stopwords") as update_bar:
+        for document in documents:
+            update_bar()
+            document.remove_stop_words()
+    print()
+
+    end = time.time()
+    total_time = end - start
+    logger.log_data_processing(f"Extracting tokens:{total_time}")
 
     return documents
 
@@ -168,6 +191,9 @@ def process_data(root_path: str | PathLike[str], logger: Log, settings: Settings
 
     documents = extract_tokens(documents)
     documents = process_tokens(documents)
+
+    if settings.remove_stop_words:
+        remove_stopwords(documents, logger)
 
     # Bag of Tokens related
     bag_of_tokens = generate_bag_of_tokens(documents)

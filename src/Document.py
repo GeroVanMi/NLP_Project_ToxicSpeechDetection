@@ -1,5 +1,6 @@
 import csv
 from os import PathLike
+from nltk.corpus import stopwords
 
 import nltk
 import numpy as np
@@ -45,6 +46,17 @@ class Document:
 
     def tokenize(self):
         self.tokens = nltk.tokenize.regexp_tokenize(self.content, r'[a-zA-Z]+')
+        return self
+
+    def remove_stop_words(self):
+        new_tokens = []
+
+        english_stopwords = stopwords.words('english')
+        for token in self.tokens:
+            if token not in english_stopwords:
+                new_tokens.append(token)
+        self.tokens = new_tokens
+
         return self
 
     def apply_lower_case(self):

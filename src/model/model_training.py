@@ -24,7 +24,7 @@ def create_model(input_shape):
 
 
 def test_model(model: Model, test_documents: list[Document], bag_of_tokens: dict, desired_batch_size=500):
-    max_size = 5000
+    max_size = 2500
     random.shuffle(test_documents)
     test_documents = test_documents[0:max_size]
 
