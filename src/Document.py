@@ -7,8 +7,8 @@ import numpy as np
 
 
 class Document:
-    tokens: [str]
-    token_vector: [int]
+    tokens: list[str]
+    token_vector: list[int]
     id: str
 
     is_toxic: int
@@ -67,10 +67,10 @@ class Document:
         self.tokens = [token.lower() for token in self.tokens]
         return self
 
-    def vectorize_tokens(self, bag_of_tokens: {}) -> [int]:
+    def vectorize_tokens(self, bag_of_tokens: dict):
         token_vector = []
 
-        for (index, token) in enumerate(self.tokens):
+        for (_, token) in enumerate(self.tokens):
             if token in bag_of_tokens:
                 token_vector.append(bag_of_tokens[token])
 
@@ -98,14 +98,14 @@ class Document:
             np_separator.join(map(str, self.token_vector)),
         ])
 
-    def one_hot_encode(self, bag_of_tokens: {str: int}):
+    def one_hot_encode(self, bag_of_tokens: dict[str, int]):
         vector = np.zeros(len(bag_of_tokens))
         for token_index in self.token_vector:
             vector[int(token_index) - 1] = 1
         return vector.astype(int)
 
     @classmethod
-    def deserialize(cls, row: [str], np_separator=","):
+    def deserialize(cls, row: list[str], np_separator=","):
         document = cls(
             row[0],
             "",
@@ -132,17 +132,17 @@ def load_documents(file_path: str | PathLike[str]) -> list[Document]:
     return documents
 
 
-def limit_documents(documents: [], limit=10) -> list[Document]:
+def limit_documents(documents: list, limit=10) -> list[Document]:
     return documents[0:limit + 1]
 
 
-def print_documents(documents: [], limit=10) -> None:
+def print_documents(documents: list, limit=10) -> None:
     documents = limit_documents(documents, limit)
     for document in documents:
         print(document)
 
 
-def extract_training_data(documents: [Document], bag_of_tokens: {str: int}):
+def extract_training_data(documents: list[Document], bag_of_tokens: dict[str, int]):
     x = []
     y = []
 
