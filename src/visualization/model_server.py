@@ -17,18 +17,17 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 @cross_origin()
 def run_model():
     request_body = request.json
-
-    if not request_body['modelName']:
+    if request_body['modelName'] is None:
         return jsonify({
             "error": "You need to supply a model name"
         }), 400
 
-    if not request_body['modelName']:
+    if request_body['documentIndex'] is None:
         return jsonify({
             "error": "You need to supply a document index"
         }), 400
 
-    root_path = '../../logs'
+    root_path = '../logs'
     model_name = request_body['modelName']
     document_index = int(request_body['documentIndex'])
     model_path = f'{root_path}/{model_name}/toxic_detection_model'
@@ -42,7 +41,8 @@ def run_model():
         documents = documents[document_index:document_index + 1]
 
         bag_of_tokens = read_bag_of_tokens(f'{root_path}/{model_name}/data/bag_of_words.json')
-    except (FileNotFoundError, OSError):
+    except (FileNotFoundError, OSError) as error:
+        print(error)
         return jsonify({
             "error": "Model could not be found."
         }), 404
@@ -85,7 +85,3 @@ def run_model():
         "prediction": 'Not Toxic' if float(layers[-1]['outputs'][0]) > float(layers[-1]['outputs'][1]) else 'Toxic',
     }
     return jsonify(data)
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
