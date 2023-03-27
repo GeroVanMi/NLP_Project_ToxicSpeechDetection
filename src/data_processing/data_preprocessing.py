@@ -1,9 +1,7 @@
 import csv
-# from fasttext.FastText import _FastText
 import time
 from os import PathLike
 
-import fasttext
 import numpy as np
 from alive_progress import alive_bar
 from sklearn.model_selection import train_test_split
@@ -12,13 +10,14 @@ from Document import Document, limit_documents
 from Log import Log
 from Settings import Settings
 from bag_of_tokens import generate_bag_of_tokens, save_bag_of_tokens
+from data_processing.document_vectorization import vectorize_documents
+from data_processing.documents_processing import process_documents
 from data_processing.oversampling import oversample
-from nltk.corpus import stopwords
 
 columns = ["id", "comment_text", "toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
 
-def read_file(file_path: str | PathLike[str], logger: Log = None) -> [Document]:
+def load_documents(file_path: str | PathLike[str], logger: Log = None) -> list[Document]:
     read_start_time = time.time()
     documents = []
     with open(file_path, 'r', newline='') as csv_file:
@@ -28,101 +27,16 @@ def read_file(file_path: str | PathLike[str], logger: Log = None) -> [Document]:
                 documents.append(Document(
                     row[0],
                     row[1],
-                    row[2],
-                    row[3],
-                    row[4],
-                    row[5],
-                    row[6],
-                    row[7],
+                    int(row[2]),
+                    int(row[3]),
+                    int(row[4]),
+                    int(row[5]),
+                    int(row[6]),
+                    int(row[7]),
                 ))
 
     if logger is not None:
         logger.log_data_processing(f"Reading files:{time.time() - read_start_time}")
-    return documents
-
-
-def extract_tokens(documents: [Document], logger: Log = None) -> []:
-    """
-
-    :param logger:
-    :param documents:
-    :return:
-    """
-    start = time.time()
-
-    with alive_bar(len(documents), title="Extracting tokens") as update_bar:
-        for document in documents:
-            update_bar()
-            document.tokenize()
-    print()
-
-    end = time.time()
-    total_time = end - start
-    if logger is not None:
-        logger.log_data_processing(f"Extracting tokens:{total_time}")
-
-    return documents
-
-
-def remove_stopwords(documents: [Document], logger: Log) -> list[Document]:
-    """
-
-    :param logger:
-    :param documents:
-    :return:
-    """
-    start = time.time()
-
-    with alive_bar(len(documents), title="Removing stopwords") as update_bar:
-        for document in documents:
-            update_bar()
-            document.remove_stop_words()
-    print()
-
-    end = time.time()
-    total_time = end - start
-    logger.log_data_processing(f"Extracting tokens:{total_time}")
-
-    return documents
-
-
-def process_tokens(documents: [Document]) -> [Document]:
-    """
-
-    :param documents:
-    :return:
-    """
-    with alive_bar(len(documents), title="Processing tokens") as update_bar:
-        for document in documents:
-            update_bar()
-            document.apply_lower_case()
-    print()
-
-    return documents
-
-
-def vectorize_documents(documents: [Document], bag_of_tokens: {}, logger: Log = None) -> []:
-    """
-    Converts the tokens into a number that can be used for training a neural network.
-
-    :param logger:
-    :param bag_of_tokens:
-    :param documents:
-    :return:
-    """
-    start = time.time()
-
-    with alive_bar(len(documents), title=f'Vectorizing documents') as update_bar:
-        for document in documents:
-            update_bar()
-            document.vectorize_tokens(bag_of_tokens)
-    print()
-
-    end = time.time()
-    total_time = end - start
-    if logger is not None:
-        logger.log_data_processing(f"Vectorizing documents:{total_time}")
-
     return documents
 
 
@@ -163,13 +77,13 @@ def save_documents(documents: [Document], file_path: str | PathLike[str], logger
         logger.log_data_processing(f"Empty documents:{empty_docs}")
 
 
-def train_fast_text_model(
-        bag_of_tokens_file_path: str | PathLike[str],
-        model_path: str | PathLike[str] = '../data/fasttext/model.bin'
-) -> None:
-    model = fasttext.train_unsupervised(bag_of_tokens_file_path, model='skipgram', minCount=1)
-    model.save_model(model_path)
-    return model
+# def train_fast_text_model(
+#         bag_of_tokens_file_path: str | PathLike[str],
+#         model_path: str | PathLike[str] = '../data/fasttext/model.bin'
+# ) -> None:
+#     model = fasttext.train_unsupervised(bag_of_tokens_file_path, model='skipgram', minCount=1)
+#     model.save_model(model_path)
+#     return model
 
 
 def process_data(root_path: str | PathLike[str], logger: Log, settings: Settings, limit: int = None, ) -> None:
@@ -184,16 +98,12 @@ def process_data(root_path: str | PathLike[str], logger: Log, settings: Settings
 
     start_time = time.time()
 
-    documents = read_file(file_path)
+    documents = load_documents(file_path)
 
     if limit is not None:
         documents = limit_documents(documents, limit)
 
-    documents = extract_tokens(documents)
-    documents = process_tokens(documents)
-
-    if settings.remove_stop_words:
-        remove_stopwords(documents, logger)
+    documents = process_documents(documents, logger, settings)
 
     # Bag of Tokens related
     bag_of_tokens = generate_bag_of_tokens(documents)

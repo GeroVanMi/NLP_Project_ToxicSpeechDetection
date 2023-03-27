@@ -60,10 +60,6 @@ class Document:
         return self
 
     def apply_lower_case(self):
-        """
-        TODO: This could be applied to the content immediately for performance improvement?
-        :return:
-        """
         self.tokens = [token.lower() for token in self.tokens]
         return self
 
@@ -109,12 +105,12 @@ class Document:
         document = cls(
             row[0],
             "",
-            row[1],
-            row[2],
-            row[3],
-            row[4],
-            row[5],
-            row[6],
+            int(row[1]),
+            int(row[2]),
+            int(row[3]),
+            int(row[4]),
+            int(row[5]),
+            int(row[6]),
         )
         document.token_vector = [int(entry) for entry in row[7].split(np_separator)]
 
