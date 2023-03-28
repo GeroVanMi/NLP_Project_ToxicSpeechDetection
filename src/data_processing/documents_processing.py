@@ -7,7 +7,7 @@ from Log import Log
 from Settings import Settings
 
 
-def extract_tokens(documents: list[Document], logger: Log = None) -> list[Document]:
+def extract_tokens(documents: list[Document], logger: Log | None = None) -> list[Document]:
     start = time.time()
 
     with alive_bar(len(documents), title="Extracting tokens") as update_bar:
@@ -34,7 +34,7 @@ def apply_lowercase(documents: list[Document]) -> list[Document]:
     return documents
 
 
-def remove_stopwords(documents: list[Document], logger: Log) -> list[Document]:
+def remove_stopwords(documents: list[Document], logger: Log | None = None) -> list[Document]:
     start = time.time()
 
     with alive_bar(len(documents), title="Removing stopwords") as update_bar:
@@ -45,12 +45,13 @@ def remove_stopwords(documents: list[Document], logger: Log) -> list[Document]:
 
     end = time.time()
     total_time = end - start
-    logger.log_data_processing(f"Extracting tokens:{total_time}")
+    if logger:
+        logger.log_data_processing(f"Extracting tokens:{total_time}")
 
     return documents
 
 
-def process_documents(documents: list[Document], logger: Log, settings: Settings) -> list[Document]:
+def process_documents(documents: list[Document], logger: Log | None, settings: Settings) -> list[Document]:
     documents = extract_tokens(documents, logger)
 
     if settings.lower_case:

@@ -6,15 +6,16 @@
         <input id="model-name-input" v-model="modelName">
 
         <label for="document-index-input">Document index</label>
-        <input id="document-index-input" v-model="documentIndex" type="number">
+<!--        <input id="document-index-input" v-model="documentIndex" type="number">-->
+        <input id="document-content-input" v-model="documentContent">
         <button @click="getModel">Load Model</button>
       </div>
 
       <div v-if="apiData.value !== null">
-        <div>ID: {{ apiData['documentId'] }}</div>
+<!--        <div>ID: {{ apiData['documentId'] }}</div>-->
         <div>Content: {{ apiData['documentTokens'] }}</div>
         <div>Prediction: {{ apiData['prediction'] }}</div>
-        <div>Actual class: {{ apiData['isToxic'] === 0 ? 'Not Toxic' : 'Toxic' }}</div>
+<!--        <div>Actual class: {{ apiData['isToxic'] === 0 ? 'Not Toxic' : 'Toxic' }}</div>-->
       </div>
 
     </div>
@@ -29,6 +30,7 @@ import {onMounted, Ref, ref} from "vue";
 const apiData: Ref<{} | null> = ref(null);
 const modelName: Ref<string> = ref('1679669805');
 const documentIndex: Ref<number> = ref(0);
+const documentContent: Ref<string> = ref('Hello World');
 
 async function getModel() {
   let apiResponse;
@@ -42,7 +44,7 @@ async function getModel() {
           },
           body: JSON.stringify({
             modelName: modelName.value,
-            documentIndex: documentIndex.value,
+            documentContent: documentContent.value,
           }),
         }
     );

@@ -1,12 +1,14 @@
 import keras
+from flask import Flask, jsonify, request
+from flask_cors import CORS, cross_origin
 from keras import backend
 from keras.layers import Dense
 
-from Document import load_documents, extract_training_data
+from Document import extract_training_data, Document
+from Settings import Settings
 from bag_of_tokens import read_bag_of_tokens
-
-from flask import Flask, jsonify, request
-from flask_cors import CORS, cross_origin
+from data_processing.document_vectorization import vectorize_documents
+from data_processing.documents_processing import process_documents
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -22,32 +24,49 @@ def run_model():
             "error": "You need to supply a model name"
         }), 400
 
-    if request_body['documentIndex'] is None:
+    if request_body['documentContent'] is None:
         return jsonify({
-            "error": "You need to supply a document index"
+            "error": "You need to supply a document content"
         }), 400
 
     root_path = '../logs'
     model_name = request_body['modelName']
-    document_index = int(request_body['documentIndex'])
+
+    settings = Settings()
+    settings.enable_lower_case().enable_oversample().enable_stop_word_removal()
+
+    # document_index = int(request_body['documentIndex'])
     model_path = f'{root_path}/{model_name}/toxic_detection_model'
 
     try:
         model = keras.models.load_model(model_path)
         model.summary()
 
-        documents = load_documents(f'{root_path}/{model_name}/data/train.csv')
-
-        documents = documents[document_index:document_index + 1]
-
-        bag_of_tokens = read_bag_of_tokens(f'{root_path}/{model_name}/data/bag_of_words.json')
     except (FileNotFoundError, OSError) as error:
         print(error)
         return jsonify({
             "error": "Model could not be found."
         }), 404
 
-    # TODO: If we want to be able to define the sentence ourself we have to
+    # documents = load_documents(f'{root_path}/{model_name}/data/train.csv')
+
+    # documents = documents[document_index:document_index + 1]
+
+    document_content = "Fuck you"
+    if isinstance(request_body['documentContent'], str):
+        document_content = request_body['documentContent']
+
+    documents = [Document(
+        "new",
+        document_content,
+        1
+    )]
+
+    bag_of_tokens = read_bag_of_tokens(f'{root_path}/{model_name}/data/bag_of_words.json')
+
+    documents = process_documents(documents, None, settings)
+    documents = vectorize_documents(documents, bag_of_tokens)
+
     x_test, _ = extract_training_data(documents, bag_of_tokens)
 
     layers = []

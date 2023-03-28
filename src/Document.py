@@ -24,11 +24,11 @@ class Document:
             document_id: str,
             content: str,
             toxic: int,
-            severe_toxic: int,
-            obscene: int,
-            threat: int,
-            insult: int,
-            identity_hate: int,
+            severe_toxic: int | None = None,
+            obscene: int | None = None,
+            threat: int | None = None,
+            insult: int | None = None,
+            identity_hate: int | None = None,
     ):
         self.id = document_id
         self.content = content
