@@ -1,3 +1,5 @@
+import os
+
 import keras
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
@@ -13,6 +15,15 @@ from data_processing.documents_processing import process_documents
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+
+@app.route("/models", methods=['GET'])
+@cross_origin()
+def get_model_names():
+    path = '../logs'
+    model_names = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+
+    return jsonify(model_names)
 
 
 @app.route("/", methods=['POST'])

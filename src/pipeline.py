@@ -5,13 +5,13 @@ from Log import Log
 from Settings import Settings
 from data_processing.data_preprocessing import process_data
 from model.model_training import train_model
+from datetime import datetime
 
 
 def run_pipeline():
-    start_time = time.time()
-
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--name')  # Run / Log name
+    parser.add_argument('-n', '--name')  # Run / Log file name
+
     # Run configuration
     parser.add_argument('-l', '--limit')
     parser.add_argument('--epochs')
@@ -28,7 +28,8 @@ def run_pipeline():
     if arguments.name:
         log_name = arguments.name
     else:
-        log_name = str(round(start_time))
+        now = datetime.now()
+        log_name = now.strftime("%Y-%m-%d %H:%M")
 
     logger = Log(root_path, log_name)
     settings = Settings()

@@ -1,13 +1,11 @@
-from os import PathLike
-
 import keras
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import log_loss, accuracy_score, f1_score
 
-from bag_of_tokens import read_bag_of_tokens
 from Document import load_documents, limit_documents, extract_training_data
 from Log import Log
+from bag_of_tokens import read_bag_of_tokens
 
 
 def plot_test_loss(test_loss, save_as_file=True) -> None:
@@ -54,7 +52,6 @@ def evaluate_model(logger: Log, limit: int = None):
     bag_of_tokens = read_bag_of_tokens(bag_of_tokens_file_path)
 
     x_test, y_test = extract_training_data(documents, bag_of_tokens)
-    # TODO: It would be nice to see how the test score evolves alongside the model during training?
     # TODO: This also needs to be split into separate chunks => + Call them chunks instead of batches?
     # TODO: Also log the predictions, to see if they're correct?
     prediction = model.predict(x_test, batch_size=50)

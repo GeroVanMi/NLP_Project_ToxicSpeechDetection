@@ -6,6 +6,7 @@
 <script setup>
 import * as THREE from 'three';
 import {onMounted, defineProps, onUpdated, watch} from "vue";
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 
 const startingPosition = 3.5;
 const initialXOffset = -1.75;
@@ -46,7 +47,8 @@ function initializeThreeJS() {
   const container = document.getElementById('three-canvas-container');
   renderer.setSize(container.offsetWidth, container.offsetHeight);
   renderer.setClearColor(0x222222, 1);
-
+  
+  renderer.domElement.id = 'three-canvas'
   container.appendChild(renderer.domElement);
 }
 
@@ -65,6 +67,10 @@ async function generateNetworkVisualization() {
   const layers = props.apiData.layers;
 
   let offset = 0;
+  // const ctx = document.getElementById("three-canvas").getContext("2d");
+  // console.log(document.getElementById("three-canvas").getContext("3d"))
+  // ctx.font = "48px serif";
+  // ctx.fillText("Hello world", 10, 50);
   for (let layer_index in layers) {
     const layer = layers[layer_index];
     const amountOfNeurons = layer.units;
@@ -76,7 +82,6 @@ async function generateNetworkVisualization() {
     // TODO: Fix this offset, the calculation here is incorrect.
     offset += numberOfRows * 2.5 * NEURON_RADIUS;
   }
-
 }
 
 /**
