@@ -6,7 +6,7 @@ from Document import Document
 from Log import Log
 
 
-def vectorize_documents(documents: [Document], bag_of_tokens: {}, logger: Log = None) -> []:
+def vectorize_documents(documents, bag_of_tokens: {}, logger=None):
     """
     Converts the tokens into a number that can be used for training a neural network.
 

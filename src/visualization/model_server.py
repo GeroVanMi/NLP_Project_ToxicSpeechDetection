@@ -16,12 +16,13 @@ app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+root_path = f'{os.path.dirname(os.path.realpath(__file__))}/../../logs'
 
 @app.route("/models", methods=['GET'])
 @cross_origin()
 def get_model_names():
-    path = '../logs'
-    model_names = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+
+    model_names = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path, d))]
 
     return jsonify(model_names)
 
@@ -40,7 +41,6 @@ def run_model():
             "error": "You need to supply a document content"
         }), 400
 
-    root_path = '../logs'
     model_name = request_body['modelName']
 
     settings = Settings()

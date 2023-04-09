@@ -1,34 +1,33 @@
 import csv
-from os import PathLike
-from nltk.corpus import stopwords
 
 import nltk
 import numpy as np
+from nltk.corpus import stopwords
 
 
 class Document:
-    tokens: list[str]
-    token_vector: list[int]
-    id: str
-
-    is_toxic: int
-    is_not_toxic: int
-    severe_toxic: int
-    obscene: int
-    threat: int
-    insult: int
-    identity_hate: int
+    # tokens: list[str]
+    # token_vector: list[int]
+    # id: str
+    #
+    # is_toxic: int
+    # is_not_toxic: int
+    # severe_toxic: int
+    # obscene: int
+    # threat: int
+    # insult: int
+    # identity_hate: int
 
     def __init__(
             self,
-            document_id: str,
-            content: str,
-            toxic: int,
-            severe_toxic: int | None = None,
-            obscene: int | None = None,
-            threat: int | None = None,
-            insult: int | None = None,
-            identity_hate: int | None = None,
+            document_id,
+            content,
+            toxic,
+            severe_toxic=None,
+            obscene=None,
+            threat=None,
+            insult=None,
+            identity_hate=None,
     ):
         self.id = document_id
         self.content = content
@@ -94,14 +93,14 @@ class Document:
             np_separator.join(map(str, self.token_vector)),
         ])
 
-    def one_hot_encode(self, bag_of_tokens: dict[str, int]):
+    def one_hot_encode(self, bag_of_tokens):
         vector = np.zeros(len(bag_of_tokens))
         for token_index in self.token_vector:
             vector[int(token_index) - 1] = 1
         return vector.astype(int)
 
     @classmethod
-    def deserialize(cls, row: list[str], np_separator=","):
+    def deserialize(cls, row, np_separator=","):
         document = cls(
             row[0],
             "",
@@ -117,7 +116,7 @@ class Document:
         return document
 
 
-def load_documents(file_path: str | PathLike[str]) -> list[Document]:
+def load_documents(file_path):
     documents = []
     with open(file_path, 'r', newline='') as csv_file:
         reader = csv.reader(csv_file, delimiter=';')
@@ -128,17 +127,17 @@ def load_documents(file_path: str | PathLike[str]) -> list[Document]:
     return documents
 
 
-def limit_documents(documents: list, limit=10) -> list[Document]:
+def limit_documents(documents, limit=10):
     return documents[0:limit + 1]
 
 
-def print_documents(documents: list, limit=10) -> None:
+def print_documents(documents, limit=10):
     documents = limit_documents(documents, limit)
     for document in documents:
         print(document)
 
 
-def extract_training_data(documents: list[Document], bag_of_tokens: dict[str, int]):
+def extract_training_data(documents, bag_of_tokens):
     x = []
     y = []
 

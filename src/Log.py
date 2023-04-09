@@ -1,12 +1,10 @@
 import os
-from os import PathLike
 
 from keras import Model
-from keras.callbacks import History
 
 
 class Log:
-    def __init__(self, root_path: str | PathLike[str], dir_name: str):
+    def __init__(self, root_path, dir_name):
         self.log_path = f'{root_path}/logs/{dir_name}/'
         os.makedirs(self.log_path)
         os.makedirs(self.log_path + "/data/")
@@ -28,11 +26,11 @@ class Log:
 
             file.write(";".join(csv) + "\n")
 
-    def log_data_processing(self, message: str):
+    def log_data_processing(self, message):
         with open(f'{self.log_path}/data_processing.log', mode='a') as file:
             file.write(message + "\n")
 
-    def log_model_structure(self, model: Model):
+    def log_model_structure(self, model):
         model_json = model.to_json()
         with open(f'{self.log_path}/model_structure.json', mode='a') as file:
             file.write(model_json + "\n")
@@ -59,6 +57,6 @@ class Log:
     def save_model(self, model: Model):
         model.save(self.log_path + 'toxic_detection_model')
 
-    def log_exception(self, exception: BaseException):
+    def log_exception(self, exception):
         with open(f'{self.log_path}/runtime_error.txt', mode='a') as file:
             file.write(str(exception))

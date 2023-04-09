@@ -1,5 +1,4 @@
 import argparse
-import time
 
 from Log import Log
 from Settings import Settings
@@ -65,7 +64,10 @@ def run_pipeline():
             print(f"Batch size \"{arguments.batch_size}\" could not be parsed. Ignoring.")
 
     process_data(root_path=root_path, logger=logger, settings=settings, limit=data_limit)
-    train_model(logger=logger, limit=data_limit, number_of_epochs=epochs, desired_batch_size=batch_size)
+    train_model(logger=logger,
+                limit=data_limit, 
+                number_of_epochs=epochs, 
+                desired_batch_size=batch_size)
 
 
 if __name__ == '__main__':

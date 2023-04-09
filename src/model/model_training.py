@@ -64,7 +64,7 @@ def train_model(
         logger: Log,
         desired_batch_size=500,
         number_of_epochs=5,
-        limit: int = None,
+        limit = None,
 ):
     training_data_path = f'{logger.log_path}/data/train.csv'
     test_data_path = f'{logger.log_path}/data/test.csv'

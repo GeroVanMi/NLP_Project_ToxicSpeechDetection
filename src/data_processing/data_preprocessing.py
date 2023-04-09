@@ -17,7 +17,7 @@ from data_processing.oversampling import oversample
 columns = ["id", "comment_text", "toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
 
-def load_documents(file_path: str | PathLike[str], logger: Log = None) -> list[Document]:
+def load_documents(file_path, logger=None):
     read_start_time = time.time()
     documents = []
     with open(file_path, 'r', newline='') as csv_file:
@@ -40,7 +40,7 @@ def load_documents(file_path: str | PathLike[str], logger: Log = None) -> list[D
     return documents
 
 
-def save_documents(documents: [Document], file_path: str | PathLike[str], logger: Log = None) -> None:
+def save_documents(documents, file_path, logger=None):
     start = time.time()
 
     with open(file_path, mode='w') as file:
@@ -80,13 +80,13 @@ def save_documents(documents: [Document], file_path: str | PathLike[str], logger
 # def train_fast_text_model(
 #         bag_of_tokens_file_path: str | PathLike[str],
 #         model_path: str | PathLike[str] = '../data/fasttext/model.bin'
-# ) -> None:
+# ):
 #     model = fasttext.train_unsupervised(bag_of_tokens_file_path, model='skipgram', minCount=1)
 #     model.save_model(model_path)
 #     return model
 
 
-def process_data(root_path: str | PathLike[str], logger: Log, settings: Settings, limit: int = None, ) -> None:
+def process_data(root_path, logger, settings, limit=None):
     print()
     print("Started data processing.\n")
 

@@ -1,0 +1,12 @@
+version: "3.7"
+services:
+  backend:
+    image: gerovanmi/toxic-detection-server
+    restart: unless-stopped
+    ports:
+      - "5095:5095"
+  frontend:
+      image: gerovanmi/neural-network-visualizer
+      restart: unless-stopped
+      ports:
+        - "5096:8080"

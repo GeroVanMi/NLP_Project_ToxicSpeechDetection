@@ -1,5 +1,4 @@
 import json
-from os import PathLike
 
 from alive_progress import alive_bar
 
@@ -7,16 +6,16 @@ from Document import Document
 from Log import Log
 
 
-def read_bag_of_tokens(file_path: str) -> dict:
+def read_bag_of_tokens(file_path):
     with open(file_path, mode='r') as file:
         return json.load(file)
 
 
-def generate_bag_of_tokens(documents: [Document], logger: Log = None) -> {}:
+def generate_bag_of_tokens(documents, logger=None):
     """
 
-    :param logger:
-    :param documents:
+    :param Log logger:
+    :param list[Document] documents:
     :return:
     """
     bag_of_tokens = {}
@@ -39,7 +38,7 @@ def generate_bag_of_tokens(documents: [Document], logger: Log = None) -> {}:
     return bag_of_tokens
 
 
-def save_bag_of_tokens(bag_of_tokens: dict, file_path: str | PathLike[str]) -> None:
+def save_bag_of_tokens(bag_of_tokens, file_path):
     """
     :param bag_of_tokens:
     :param file_path:
